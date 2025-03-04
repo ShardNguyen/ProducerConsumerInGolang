@@ -1,4 +1,10 @@
 // Task: Log the timeout case and check if the time out is reached
+/*
+	- All of the consumers will reach timeout
+	- I believe this has to be related to the "select" part on the consumers' side
+	- Because although when producer no longer sends the message, the consumer will continue on waiting, making case msg := <-ch unable to happen
+	- And that will cause the timeout case to happen
+*/
 
 package main
 
@@ -48,7 +54,7 @@ func consumer(index int, ch chan string, wg *sync.WaitGroup) {
 			fmt.Printf("Consumer %v Received: %s\n", index, msg)
 		// Timeout in case the producer doesn't produce any more responses (In this example, 1000ms)
 		case <-time.After(1000 * time.Millisecond):
-			fmt.Println("Timeout!")
+			fmt.Printf("Consumer %v Timeout!\n", index)
 			done = true
 		}
 	}
@@ -56,5 +62,5 @@ func consumer(index int, ch chan string, wg *sync.WaitGroup) {
 }
 
 func main() {
-	multiConsumerProducer(20, 2)
+	multiConsumerProducer(2, 10)
 }
