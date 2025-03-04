@@ -8,46 +8,45 @@ import (
 
 func multiConsumerProducer(producerSize, consumerSize int) {
 	ch := make(chan string) // A channel for communication between producer and consumer
-	var wg sync.WaitGroup   // Wait Group
+	var wg sync.WaitGroup   // Wait Group to indicate how many concurrent functions that needs waiting to be done
 
 	// Start multiple producers
 	for i := 0; i < producerSize; i++ {
-		wg.Add(1) // Add one go function to the wait group
+		wg.Add(1) // Indicate that Wait Group needs to wait for one more function
 		go producer(i, ch, &wg)
 	}
 
 	// Start multiple consumers
 	for i := 0; i < consumerSize; i++ {
-		wg.Add(1) // Add one go function to the wait group
+		wg.Add(1) // Indicate that Wait Group needs to wait for one more function
 		go consumer(i, ch, &wg)
 	}
 
-	wg.Wait() // Wait until every go functions finish its job
+	wg.Wait() // Wait until every go functions finish their job
 	close(ch)
 }
 
 func producer(index int, ch chan string, wg *sync.WaitGroup) {
 	// Each producer will send out 5 messages (As an example)
-	for i := 0; i < 10; i++ {
-		// Sending signal away and block the current iteration (But the next iteration can start somehow)
+	for i := 0; i < 5; i++ {
+		// Sending signal away and block the current iteration (But the next iteration can start somehow?)
 		ch <- fmt.Sprintf("Producer %v send %v", index, i)
 	}
+	// Once all of the producer's messages are received, the job is done for the producer
 	wg.Done()
 }
 
 func consumer(index int, ch chan string, wg *sync.WaitGroup) {
 	done := false
 	for !done {
+		// The loop is blocked until one of the two scenarios happens
 		select {
-		// If the consumer can catch the channel
-		case msg, ok := <-ch:
-			if !ok {
-				done = true
-			}
+		// Case when receiever caught the message
+		case msg := <-ch:
 			fmt.Printf("Consumer %v Received: %s\n", index, msg)
 		// Timeout in case the producer doesn't produce any more responses (In this example, 1000ms)
 		case <-time.After(1000 * time.Millisecond):
-			wg.Done()
+			done = true
 		}
 	}
 	wg.Done()
