@@ -1,3 +1,5 @@
+// Task: Log the timeout case and check if the time out is reached
+
 package main
 
 import (
@@ -46,6 +48,7 @@ func consumer(index int, ch chan string, wg *sync.WaitGroup) {
 			fmt.Printf("Consumer %v Received: %s\n", index, msg)
 		// Timeout in case the producer doesn't produce any more responses (In this example, 1000ms)
 		case <-time.After(1000 * time.Millisecond):
+			fmt.Println("Timeout!")
 			done = true
 		}
 	}
