@@ -1,8 +1,4 @@
-// Task: Replace waitgroup with channel, is that ok?
 /*
-
- */
-
 package main
 
 import (
@@ -101,3 +97,4 @@ consumerLoop:
 func main() {
 	fmt.Println("Total:", multiConsumerProducer(10, 20))
 }
+*/
