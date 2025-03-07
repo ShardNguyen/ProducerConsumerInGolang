@@ -1,26 +1,23 @@
-// Task: Change bool condition on loop to channel-based condition kind of loop
+// Task: Replace waitgroup with channel, is that ok?
 /*
-	- Current solution: Make a moderator role
 
-	- Moderator will be the only channel to trigger the toStop channel
-	- toStop channel will notify the moderator to close Stop channel, meaning the Stop channel will be triggered in the "select" case
-		+ Sending data to a closed channel will cause a panic
-		+ But receiving data from a closed channel will be ok (Meaning <- closedChannel will still trigger the "select")
-	- The Stop channel is used for breaking the loop in both consumer and producer
-*/
+ */
 
 package main
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"sync"
 )
 
-func multiConsumerProducer(producerSize, consumerSize int) {
-	ch := make(chan string)        // A channel for communication between producer and consumer
+func multiConsumerProducer(producerSize, consumerSize int) int {
+	ch := make(chan int)           // A channel for communication between producer and consumer
 	stopCh := make(chan struct{})  // An additional channel to stop data
 	toStopCn := make(chan bool)    // Another channel to notify the moderator to close the stopCh channel
 	var wgConsumers sync.WaitGroup // Wait Group to indicate how many concurrent RECEIVING functions that needs waiting to be done
+	sum := 0
+	var mu sync.RWMutex
 
 	// Start one moderator
 	go moderator(stopCh, toStopCn)
@@ -31,13 +28,14 @@ func multiConsumerProducer(producerSize, consumerSize int) {
 	}
 
 	// Start multiple consumers
+	wgConsumers.Add(consumerSize)
 	for i := 0; i < consumerSize; i++ {
-		wgConsumers.Add(1) // Indicate that Wait Group needs to wait for one more function
-		go consumer(i, ch, stopCh, toStopCn, &wgConsumers)
+		go consumer(i, ch, stopCh, toStopCn, &wgConsumers, &mu, &sum)
 	}
 
 	wgConsumers.Wait() // Wait until every consumers functions finish their job
 	close(ch)
+	return sum
 }
 
 func moderator(stopCh chan struct{}, toStopCn chan bool) {
@@ -45,7 +43,7 @@ func moderator(stopCh chan struct{}, toStopCn chan bool) {
 	close(stopCh)
 }
 
-func producer(index int, prodSize int, ch chan string, stopCh chan struct{}, toStopCn chan bool) {
+func producer(index int, prodSize int, ch chan int, stopCh chan struct{}, toStopCn chan bool) {
 	// Each producer will send out 5 messages (As an example)
 	for i := 0; i < 5; i++ {
 		// Logical condition when producer doesn't want to produce any more data
@@ -58,23 +56,32 @@ func producer(index int, prodSize int, ch chan string, stopCh chan struct{}, toS
 			}
 		}
 
+		randNum := rand.IntN(100)
+
 		select {
 		// Stop sending messages when receiving the stop signal
 		case <-stopCh:
 			return
 		// Sending signal away and block the thread of current iteration
-		case ch <- fmt.Sprintf("Producer %v send %v", index, i):
+		case ch <- randNum:
+			fmt.Println("Produced", randNum)
 		}
 	}
 }
 
-func consumer(index int, ch chan string, stopCh chan struct{}, toStopCn chan bool, wg *sync.WaitGroup) {
+func consumer(index int, ch chan int, stopCh chan struct{}, toStopCn chan bool, wg *sync.WaitGroup, mu *sync.RWMutex, sum *int) {
+	defer wg.Done()
 consumerLoop:
 	for {
 		select {
 		// Case when receiever caught the message
 		case msg := <-ch:
-			fmt.Printf("Consumer %v Received: %s\n", index, msg)
+			// Mutex is needed to synchronize the sum that needs reading
+			mu.Lock()
+			fmt.Println("Received", msg)
+			*sum += msg
+			mu.Unlock()
+
 			// Logical condition when consumer doesn't want to consume any more data
 			if index == 7 {
 				select {
@@ -89,9 +96,8 @@ consumerLoop:
 			break consumerLoop
 		}
 	}
-	wg.Done()
 }
 
 func main() {
-	multiConsumerProducer(20, 10)
+	fmt.Println("Total:", multiConsumerProducer(10, 20))
 }
