@@ -9,14 +9,11 @@
 	- The Stop channel is used for breaking the loop in both consumer and producer
 */
 
-// Global variable
-
 package main
 
 import (
 	"fmt"
 	"sync"
-	//"time"
 )
 
 func multiConsumerProducer(producerSize, consumerSize int) {
@@ -56,7 +53,7 @@ func producer(index int, prodSize int, ch chan string, stopCh chan struct{}, toS
 			select {
 			// Send a signal to the moderator for ending the data tranmission
 			case toStopCn <- true:
-				fmt.Println("Stopped by producer #", index, "at msg", i)
+				fmt.Println("Stopped by producer", index, "at msg", i)
 			default:
 			}
 		}
@@ -78,12 +75,12 @@ consumerLoop:
 		// Case when receiever caught the message
 		case msg := <-ch:
 			fmt.Printf("Consumer %v Received: %s\n", index, msg)
-			// Logical condition when receiver doesn't want to receive any more data
-			if index == 9 {
+			// Logical condition when consumer doesn't want to consume any more data
+			if index == 7 {
 				select {
 				// Send a signal to the moderator for ending the data tranmission
 				case toStopCn <- true:
-					fmt.Println("Stopped by receiver #", index)
+					fmt.Println("Consumer", index, "asked to stop")
 				default:
 				}
 				break consumerLoop
