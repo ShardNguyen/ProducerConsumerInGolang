@@ -5,5 +5,5 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	// fmt.Println("Total:", multiConsumerProducer(10, 20))
+	multiProducerConsumer(5, 5)
 }
