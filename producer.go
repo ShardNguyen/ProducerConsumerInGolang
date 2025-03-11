@@ -12,8 +12,6 @@ and calculate the sum of values the consumers has received
 
 package main
 
-import "fmt"
-
 // ----- Producer -----
 type Producer struct {
 	ch chan int
@@ -27,5 +25,5 @@ func NewProducer(ch chan int) *Producer {
 
 func (p *Producer) SendValue(val int) {
 	p.ch <- val
-	fmt.Println("Sent value", val)
+	// fmt.Println("Sent value", val)
 }

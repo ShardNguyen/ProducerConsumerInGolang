@@ -9,8 +9,6 @@
 
 package main
 
-import "fmt"
-
 type Consumer struct {
 	ch  chan int
 	val int
@@ -22,11 +20,12 @@ func NewConsumer(ch chan int) *Consumer {
 	}
 }
 
-func (c *Consumer) ReceiveValue() {
+func (c *Consumer) ReceiveValue(counter *Counter) {
 	for {
 		select {
 		case c.val = <-c.ch:
-			fmt.Println("Received", c.val)
+			// fmt.Println("Received", c.val)
+			counter.AddConsumerMessage(c.val)
 		}
 	}
 }
